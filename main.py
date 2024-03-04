@@ -1,4 +1,3 @@
-import random
 from itertools import permutations
 cages = []
 
@@ -61,61 +60,53 @@ def get_cage_sum(board, cells):
                 print("\n[! INVALID INPUT !]")
                 print("Sum must be a align with the length of the cage.")
                 print(f"Available cage sum is from [{len(cells)}] to [{len(cells) * 4}]\n")
+        print("\n\nUpdated board:")
         print_boxes_layout(board)
-
-def check_cage_sum(board, cells, cage_sum):
-    while True:
-        if not generate_cell_num(board, cells):
-            return False
-        # check cage sum
-        total = 0
-        for cell in cells:
-            row, col = cell
-            total += board[row][col]
-        if total == int(cage_sum):
-            return int(cage_sum)
-        print("\n--[print] invalid cage_sum\n")
 
 def generate_cell_num(board, cells, cage_sum):
     global cages
-    limit = 0
-    limitFlag = 0
-    limitEdit = 1
+    count = 1
+    track_cage = 0
+    cages_length = len(cages) - 1
     numbers = [1, 2, 3, 4]
 
-    # Generate all permutations as the limit
-    perms = permutations(numbers, len(cells))
-    for perm in perms:
-        limit += 1
+    while True:
+        # Generate numbers for the cage
+        for perm in permutations(numbers, len(cells)):
+            if sum(perm) == cage_sum:
+                for idx, cell in enumerate(cells):
+                    row, col = cell
+                    board[row][col] = perm[idx]
 
-    # generate number on the cage
-    while not is_to_sum(board, cells, cage_sum):
+                row_errors, col_errors, duplicates = check_cage(board)
+                if sum(row_errors) == 0 and sum(col_errors) == 0 and not duplicates:
+                    return True
+        
         for cell in cells:
             row, col = cell
-            num = random.randint(1, 4)
-            while not is_valid_cage(board, row, col, num):
-                num = random.randint(1, 4)
-            board[row][col] = num
+            board[row][col] = 0
         
-    return True
+        if track_cage > cages_length:
+            return False
 
-def is_valid_cage(board, row, col, num):
-    # Check if the number is not present in the same row
-    if num in board[row]:
-        return False
-    
-    # Check if the number is not present in the same column
-    if num in [board[i][col] for i in range(4)]:
-        return False
-    
-    # Check if the number is not present in the same 2x2 subgrid
-    start_row, start_col = 2 * (row // 2), 2 * (col // 2)
-    for i in range(start_row, start_row + 2):
-        for j in range(start_col, start_col + 2):
-            if board[i][j] == num:
-                return False
-    
-    return True
+        check_cage_sum, check_cells = cages[cages_length - track_cage]
+        perm_length = sum(1 for perm in permutations(numbers, len(check_cells)) if sum(perm) == check_cage_sum)
+
+        track = 0
+        for perm in permutations(numbers, len(check_cells)):
+            if sum(perm) == check_cage_sum and track < count:
+                for idx, cell in enumerate(check_cells):
+                    row, col = cell
+                    board[row][col] = perm[idx]
+                track += 1
+
+        row_errors, col_errors, duplicates = check_cage(board)
+        if sum(row_errors) == 0 and sum(col_errors) == 0 and not duplicates:
+            if count > perm_length:
+                track_cage += 1
+            count += 1
+        else:
+            return False
 
 def is_to_sum(board, cells, cage_sum):
     total = 0
@@ -126,61 +117,147 @@ def is_to_sum(board, cells, cage_sum):
         return True
     return False
 
-def edit_prev_cage(board, cages, cage_idx, cage_sum):
-    cage_num, prev_cells = cages
-    reset_cells(board, prev_cells)
+def check_cage(board):
+    n = len(board)
+    row_errors = [0] * n
+    col_errors = [0] * n
+    
+    # Count errors in each row and column
+    for i in range(n):
+        row_nums = set()
+        col_nums = set()
+        for j in range(n):
+            if board[i][j] != 0:
+                if board[i][j] in row_nums:
+                    row_errors[i] += 1
+                else:
+                    row_nums.add(board[i][j])
+            
+            if board[j][i] != 0:
+                if board[j][i] in col_nums:
+                    col_errors[i] += 1
+                else:
+                    col_nums.add(board[j][i])
+    
+    # dups
+    duplicates = {}
+    # Iterate through each 2x2 subgrid
+    for i in range(0, len(board), 2):
+        for j in range(0, len(board[0]), 2):
+            coord = {}
+            subgrid_values = set()
+            for x in range(i, i + 2):
+                for y in range(j, j + 2):
+                    cell_value = board[x][y]
+                    if cell_value != 0:
+                        if cell_value in subgrid_values:
+                            if cell_value in duplicates:
+                                duplicates[cell_value].append((x, y))
+                            else:
+                                duplicates[cell_value] = [(x, y), coord[cell_value]]
+                        else:
+                            coord[cell_value] = (x, y)
+                            subgrid_values.add(cell_value)
 
-    limit = 0
-    limitFlag = 0
+    return row_errors, col_errors, duplicates
+
+def solve(board):
+    global cages
+    track_cage = 0
+    count = 1
+    cages_length = len(cages) - 1
     numbers = [1, 2, 3, 4]
 
-    perms = permutations(numbers, len(prev_cells))
-    for perm in perms:
-        limit += 1
+    while True:
+        cage_sum, cells = cages[cages_length]
 
-    while not is_valid_cage(board, prev_cells):
-
-        print(f"\n[edit_prev_cage] tries: [{limitFlag}]")
-        print_boxes_layout(board)
-        print("\n")
-
-        # check if stuck
-        limitFlag += 1
-        if (limitFlag > limit + 1):
-            return False
+        for perm in permutations(numbers, len(cells)):
+            if sum(perm) == cage_sum:
+                for idx, cell in enumerate(cells):
+                    row, col = cell
+                    board[row][col] = perm[idx]
             
-        # generate number on the cage
-        for cell in prev_cells:
+                row_errors, col_errors = print_error_counts(board)
+                duplicates = find_duplicate_coordinates(board)
+
+                if sum(row_errors) == 0 and sum(col_errors) == 0 and not duplicates:
+                    return True
+
+        for cell in cells:
             row, col = cell
-            num = random.randint(1, 4)
-            while not is_to_sum(board, prev_cells, cage_sum):
-                num = random.randint(1, 4)
-            board[row][col] = num
+            board[row][col] = 0
 
-    print(f"\n[edit_prev_cage] cage_idx: [{cage_idx}] final")
-    print_boxes_layout(board)
-    print("\n")
-
-    return True
-
-def reset_cells(board, cells):
-    for cell in cells:
-        row, col = cell
-        board[row][col] = 0
-
-def check_board(board):
-    for row in board:
-        # Check if there are any duplicate numbers in the row
-        if len(set(row)) != len(row):
-            return False
-
-    for col in range(4):
-        column_values = [board[row][col] for row in range(4)]
-        # Check if there are any duplicate numbers in the column
-        if len(set(column_values)) != len(column_values):
+        if track_cage > cages_length:
             return False
         
-    return True
+        check_cage_sum, check_cells = cages[cages_length - track_cage]
+        perm_length = sum(1 for perm in permutations(numbers, len(cells)) if sum(perm) == cage_sum)
+        
+        track = 0
+        for perm in permutations(numbers, len(check_cells)):
+            if sum(perm) == check_cage_sum and track < count:
+                for idx, cell in enumerate(check_cells):
+                    row, col = cell
+                    board[row][col] = perm[idx]
+                track += 1
+
+        row_errors, col_errors = print_error_counts(board)
+        duplicates = find_duplicate_coordinates(board)
+        if sum(row_errors) == 0 and sum(col_errors) == 0 and not duplicates:
+            if count > perm_length:
+                track_cage += 1
+            count += 1
+        else:
+            return False
+
+def print_error_counts(board):
+    n = len(board)
+    row_errors = [0] * n
+    col_errors = [0] * n
+    
+    # Count errors in each row and column
+    for i in range(n):
+        row_nums = set()
+        col_nums = set()
+        for j in range(n):
+            if board[i][j] == 0:
+                row_errors[i] += 1
+            elif board[i][j] in row_nums:
+                row_errors[i] += 1
+            else:
+                row_nums.add(board[i][j])
+            
+            if board[j][i] == 0:
+                col_errors[i] += 1
+            elif board[j][i] in col_nums:
+                col_errors[i] += 1
+            else:
+                col_nums.add(board[j][i])
+    
+    return row_errors, col_errors
+
+def find_duplicate_coordinates(board):
+    duplicates = {}
+
+    # Iterate through each 2x2 subgrid
+    for i in range(0, len(board), 2):
+        for j in range(0, len(board[0]), 2):
+            coord = {}
+            subgrid_values = set()
+            for x in range(i, i + 2):
+                for y in range(j, j + 2):
+                    cell_value = board[x][y]
+                    if cell_value != 0:
+                        if cell_value in subgrid_values:
+                            if cell_value in duplicates:
+                                duplicates[cell_value].append((x, y))
+                            else:
+                                duplicates[cell_value] = [(x, y), coord[cell_value]]
+                        else:
+                            coord[cell_value] = (x, y)
+                            subgrid_values.add(cell_value)
+    
+    return duplicates
 
 def main():
     board = generate_board()
@@ -195,10 +272,17 @@ def main():
         cage_sum = get_cage_sum(board, cells)
         cages.append((cage_sum, cells))
         
-        print("Updated board:")
+        print("\n\nUpdated board:")
         print_boxes_layout(board)
  
-    if (check_board(board)):
+    row_errors, col_errors = print_error_counts(board)
+    duplicates = find_duplicate_coordinates(board)
+
+    # Check if there are no errors 
+    if not row_errors and not col_errors and not duplicates:
+        print("\nSolution found:")
+        print_boxes_layout(board)
+    elif (solve(board)):
         print("\nSolution found:")
         print_boxes_layout(board)
     else:
