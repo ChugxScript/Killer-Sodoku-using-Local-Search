@@ -49,7 +49,7 @@ def get_cage_sum(board, cells):
             print("Sum must be a positive integer.\n")
         else:
             if (int(cage_sum) > 0 and int(cage_sum) >= len(cells) and int(cage_sum) <= (len(cells) * 4)):
-                if generate_cell_num(board, cells, int(cage_sum), 'get_cage_sum'):
+                if fchoice_algorithm(board, cells, int(cage_sum), 'get_cage_sum'):
                     return int(cage_sum)
                 else:
                     print("\n[! ERROR !]")
@@ -63,7 +63,7 @@ def get_cage_sum(board, cells):
         print("\n\nUpdated board:")
         print_boxes_layout(board)
 
-def generate_cell_num(board, cells, cage_sum, call):
+def fchoice_algorithm(board, cells, cage_sum, call):
     global cages
     count = 1
     track_cage = 0
@@ -109,7 +109,6 @@ def generate_cell_num(board, cells, cage_sum, call):
                 track_cage += 1
             count += 1
         else:
-            board = temp_board
             return False
 
 def check_cage(board, call):
@@ -199,7 +198,7 @@ def main():
     if sum(row_errors) == 0 and sum(col_errors) == 0 and not duplicates:
         print("\nSolution found:")
         print_boxes_layout(board)
-    elif (generate_cell_num(board, ch_cells, ch_cage_sum, 'main')):
+    elif (fchoice_algorithm(board, ch_cells, ch_cage_sum, 'main')):
         print("\nSolution found:")
         print_boxes_layout(board)
     else:
