@@ -55,4 +55,5 @@
 
 7. Cage cells: `3,0 3,1 3,2`
   Cage sum: `6`
+  
   ![image](https://github.com/ChugxScript/Killer-Sodoku-using-Local-Search/assets/101156843/e9cdfbb0-f8ae-4c99-8330-3863f4b15ffb)
