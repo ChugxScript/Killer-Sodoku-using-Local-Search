@@ -214,5 +214,5 @@ if __name__ == "__main__":
     print("MACHINE PROBLEM 3")
     print("4X4 KILLER SUDOKU USING BACK JUMPING")
     print("BY: ANDREW OLOROSO")
-    print("GITHUB REPO: https://github.com/ChugxScript/Killer-Sodoku-using-Local-Search")
+    print("GITHUB REPO: https://github.com/ChugxScript/Killer-Sodoku-using-Local-Search/tree/main/back_jumping")
     print("-----------------------------------")
